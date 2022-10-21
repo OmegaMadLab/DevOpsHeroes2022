@@ -10,6 +10,11 @@ on:
        - main
        - dev
 
+  push:
+    branches: 
+      - main
+      - dev
+
 env:
   BICEP_FILE: './app1.bicep'
   PARAMETER_FILE_TEST: './app1.TEST.parameters.json'
@@ -45,7 +50,7 @@ jobs:
 
   deployTest:
     name: Deploy to TEST environment
-    if: github.event.pull_request.base.ref == 'dev' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    if: github.event.ref == 'refs/heads/dev'
     needs: [buildIaC]
     runs-on: ubuntu-latest
     steps:
@@ -70,7 +75,7 @@ jobs:
 
   previewIaCProd:
     name: Preview IaC changes in PROD
-    if: github.event.pull_request.base.ref == 'main' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    if: github.event.ref == 'refs/heads/main'
     needs: [buildIaC]
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +100,7 @@ jobs:
 
   deployProd:
     name: Deploy to PROD environment
-    if: github.event.pull_request.base.ref == 'main' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    if: github.event.ref == 'refs/heads/main'
     environment:
       name: PROD
     needs: [previewIaCProd]
