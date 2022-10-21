@@ -1,0 +1,114 @@
+name: App 1 deployment
+
+on: 
+ push:
+
+env:
+  BICEP_FILE: './app1.bicep'
+  PARAMETER_FILE_TEST: './app1.TEST.parameters.json'
+  PARAMETER_FILE_PROD: './app1.PROD.parameters.json'
+  AZURE_RESOURCEGROUP_NAME_TEST: 'App1-TEST-RG'
+  AZURE_RESOURCEGROUP_NAME_PROD: 'App1-PROD-RG'
+
+jobs:
+
+  buildIaC:
+    name: Build the infrastructure
+    runs-on: ubuntu-latest
+    steps:
+    # Checks out a copy of the repo on a ubuntu runner
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Login to Azure - can be placed below if validation is executed via Bicep build or related Action
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZCRED_DEV }}
+
+    # Simulate a deployment with Az CLI and ensure transpilation, linting and pre-flight checks
+    
+    - name: Build ARM Template from bicep file and validate it versus TEST environment
+      run: |
+        az deployment group validate \
+          --name '${{ github.run_number }}' \
+          --resource-group '${{ env.AZURE_RESOURCEGROUP_NAME_TEST }}' \
+          --template-file '${{ env.BICEP_FILE }}' \
+          --parameters @${{ env.PARAMETER_FILE_TEST }}
+
+  deployTest:
+    name: Deploy to TEST environment
+    if: github.ref == 'refs/heads/dev'
+    needs: [buildIaC]
+    runs-on: ubuntu-latest
+    steps:
+    # Checks out a copy of the repo on a ubuntu runner
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Login to Azure
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZCRED_DEV }}
+
+    # Deploy the template on TEST
+    - name: Deploy template
+      uses: azure/arm-deploy@v1
+      with:
+        deploymentName: ${{ github.run_number }}
+        resourceGroupName: ${{ env.AZURE_RESOURCEGROUP_NAME_TEST }}
+        template: ${{ env.BICEP_FILE}}
+        parameters: ${{ env.PARAMETER_FILE_TEST }}
+
+  previewIaCProd:
+    name: Preview IaC changes in PROD
+    if: github.ref == 'refs/heads/main'
+    needs: [buildIaC]
+    runs-on: ubuntu-latest
+    steps:
+    # Checks out a copy of the repo on a ubuntu runner
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Login to Azure
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZCRED_PROD }}
+
+    # Preview changes with What-If deployment
+    - name: Preview changes to PROD environment
+      run: |
+        az deployment group what-if \
+          --name '${{ github.run_number }}' \
+          --resource-group '${{ env.AZURE_RESOURCEGROUP_NAME_PROD }}' \
+          --template-file '${{ env.BICEP_FILE }}' \
+          --parameters @${{ env.PARAMETER_FILE_TEST }}
+
+  deployProd:
+    name: Deploy to PROD environment
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: PROD
+    needs: [previewIaCProd]
+    runs-on: ubuntu-latest
+    steps:
+    # Checks out a copy of the repo on a ubuntu-20.04 runner
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Login to Azure - can be placed below if validation is executed via Bicep build or related Action
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZCRED_PROD }}
+
+    # Deploy the template on PROD
+    - name: Deploy template
+      uses: azure/arm-deploy@v1
+      with:
+        deploymentName: ${{ github.run_number }}
+        resourceGroupName: ${{ env.AZURE_RESOURCEGROUP_NAME_PROD }}
+        template: ${{ env.BICEP_FILE}}
+        parameters: ${{ env.PARAMETER_FILE_PROD }}
