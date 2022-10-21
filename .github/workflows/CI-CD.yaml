@@ -45,7 +45,7 @@ jobs:
 
   deployTest:
     name: Deploy to TEST environment
-    if: github.ref == 'refs/heads/dev' && github.event.pull_request.merged == true
+    if: github.ref == 'refs/heads/dev' && github.event.action == 'closed' && github.event.pull_request.merged == true
     needs: [buildIaC]
     runs-on: ubuntu-latest
     steps:
@@ -70,7 +70,7 @@ jobs:
 
   previewIaCProd:
     name: Preview IaC changes in PROD
-    if: github.ref == 'refs/heads/main' && github.event.pull_request.merged == true
+    if: github.ref == 'refs/heads/main' && github.event.action == 'closed' && github.event.pull_request.merged == true
     needs: [buildIaC]
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +95,7 @@ jobs:
 
   deployProd:
     name: Deploy to PROD environment
-    if: github.ref == 'refs/heads/main' && github.event.pull_request.merged == true
+    if: github.ref == 'refs/heads/main' && github.event.action == 'closed' && github.event.pull_request.merged == true
     environment:
       name: PROD
     needs: [previewIaCProd]
