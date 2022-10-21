@@ -95,7 +95,7 @@ jobs:
           --name '${{ github.run_number }}' \
           --resource-group '${{ env.AZURE_RESOURCEGROUP_NAME_PROD }}' \
           --template-file '${{ env.BICEP_FILE }}' \
-          --parameters @${{ env.PARAMETER_FILE_TEST }}
+          --parameters @${{ env.PARAMETER_FILE_PROD }}
 
   deployProd:
     name: Deploy to PROD environment
