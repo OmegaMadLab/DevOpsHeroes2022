@@ -59,5 +59,5 @@ resource trafficManager 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' = 
   }
 }
 
-output tfUri string = trafficManager.properties.dnsConfig.fqdn
+output tfUri string = environment == 'PROD' ? trafficManager.properties.dnsConfig.fqdn : ''
 
