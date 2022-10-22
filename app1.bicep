@@ -18,7 +18,7 @@ var environmentRegion = {
   ]
 }
 
-module webApp 'br:acr43208.azurecr.io/modules/webapp-module:v0.3.0' = [for region in environmentRegion[environment]: {
+module webApp 'br:acr43208.azurecr.io/modules/webapp-module:v0.5.0' = [for region in environmentRegion[environment]: {
   name: '${namePrefix}-webApp-${environment}-${region}'
   params: {
     webAppNamePrefix: namePrefix
@@ -59,5 +59,5 @@ resource trafficManager 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' = 
   }
 }
 
-output tfUri string = environment == 'PROD' ? trafficManager.properties.dnsConfig.fqdn : ''
+output tfUri string = environment == 'PROD' ? trafficManager.properties.dnsConfig.fqdn : 'n.a.'
 
